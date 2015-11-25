@@ -25,6 +25,10 @@ footer{
     left : 0;
 }
 
+a{
+    color : #444444;
+}
+
 h3{
     font-size : small;
     font-weight : 400;
