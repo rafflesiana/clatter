@@ -5,7 +5,7 @@ body{
 }
 
 h1{
-    font-family : "Gill Sans";
+    font-family : "Gill Sans", "HelveticaNeue-Light", "HelveticaNeue", "Meiryo UI","Hiragino Kaku Gothic Pro";
     letter-spacing : 5px;
     font-weight : 400;
     margin-left : 20px;

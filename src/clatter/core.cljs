@@ -12,12 +12,12 @@
 (set! (.-ammo (.-scripts js/Physijs)) "ammo.js")
 
 (defprotocol Sprite
-  (setup [this])
+  (init [this])
   (animate [this]))
 
 (defrecord TextSprite [mesh pos rot force need-force]
   Sprite
-  (setup [this]
+  (init [this]
     (set! (.-collisions mesh) 0)
     (.addEventListener mesh
                        "collision"
@@ -136,7 +136,7 @@
                               (.-rotation camera)
                               (.negate (.clone camera-pos))
                               (atom true))]
-      (setup sprite)
+      (init sprite)
       (swap! sprites conj sprite)
       (.add scene mesh)))
   
@@ -210,7 +210,7 @@
   
   (keypress [this evt]
     (let [code (if evt (.-charCode evt) (.-charCode js/event))]
-      (when-not (<= code 32)
+      (when (> code 32)
         (let [char (.. js/String (fromCharCode code) toUpperCase)]
           (when-not @mute
             (play-sound this char))
