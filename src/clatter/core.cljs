@@ -4,8 +4,8 @@
 (defonce PI js/Math.PI)
 (defonce HALF-PI (/ PI 2))
 (defonce $ js/jQuery)
-(defonce is-mobile (do (some #(>= (.indexOf (.-userAgent js/navigator) %1) 0)
-                             ["iPhone" "iPad" "iPod" "Android"])))
+(defonce is-mobile (some #(>= (.indexOf (.-userAgent js/navigator) %1) 0)
+                         ["iPhone" "iPad" "iPod" "Android"]))
 
 ;; Physijs settings
 (set! (.-worker (.-scripts js/Physijs)) "js/physijs_worker.js")
