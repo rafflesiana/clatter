@@ -200,10 +200,12 @@
   
   (play-sound [this text]
     (when-let [audio-tag (get audio-map text)]
-      (when-not (.-ended audio-tag)
-        (.pause audio-tag)
-        (set! (.-currentTime audio-tag) 0))
-      (.play audio-tag)))
+      (try
+        (when-not (.-ended audio-tag)
+          (.pause audio-tag)
+          (set! (.-currentTime audio-tag) 0))
+        (.play audio-tag)
+        (catch js/Object e))))
   
   (clear [this evt]
     (clear-texts world))
@@ -219,7 +221,9 @@
   (message [this]
     (let [$message ($ "<div/>" "message")]
       (-> $message
-          (.text (str (when is-mobile "Tap Here and ") "Type Something."))
+          (.text (if (.-webgl js/Detector)
+                   (str (when is-mobile "Tap Here and ") "Type Something.")
+                   "Your browser does not seem to support WebGL. Please confirm setting or change browser."))
           (.on "click" (fn [] (.focus ($ "input"))))
           (.addClass "message")          
           (.insertAfter "header")
