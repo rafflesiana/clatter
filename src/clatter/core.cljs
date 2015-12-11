@@ -170,14 +170,29 @@
     (bind this)
     (render world)
     (message this))
-  
+
   (bind [this]
-    (.on ($ "#sound-button") "click" (fn [evt] (sound this evt)))
-    (.on ($ "#clear-button") "click" (fn [evt] (clear this evt)))
-    (when is-mobile
-      (-> ($ "#keyboard-button")
-          (.removeClass "hidden")
-          (.on "click" (fn [] (.focus ($ "input"))))))
+    (let [button-holder ($ ".button-holder")
+          sound-button ($ "<button/>" (clj->js {:id "sound-button"
+                                                 :class "pure-button btn"}))
+          clear-button ($ "<button/>" (clj->js {:id "clear-button"
+                                                 :class "pure-button btn"}))]
+      (-> button-holder
+          (.append sound-button)
+          (.append clear-button))
+      (-> sound-button
+          (.append (.addClass ($ "<i/>") "fa fa-volume-up"))
+          (.on "click" (fn [evt] (sound this evt))))
+      (-> clear-button
+          (.append (.addClass ($ "<i/>") "fa fa-undo"))
+          (.on "click" (fn [evt] (clear this evt))))
+      (when is-mobile
+        (let [keyboard-button ($ "<button/>" (clj->js {:id "keyboard-button"
+                                                        :class "pure-button btn"}))]
+          (.append button-holder keyboard-button)
+          (-> keyboard-button
+              (.append (.addClass ($ "<i/>") "fa fa-keyboard-o"))
+              (.on "click" (fn [] (.focus ($ "input"))))))))
     (.keypress ($ js/document) (fn [evt] (keypress this evt)))
     (.resize ($ js/window) (fn [evt] (resize this)))
     (.appendChild js/document.body (.-domElement (:renderer world))))
@@ -222,12 +237,12 @@
     (let [$message ($ "<div/>" "message")]
       (-> $message
           (.text (if (.-webgl js/Detector)
-                   (str (when is-mobile "Tap Here and ") "Type Something.")
+                   (str (when is-mobile "Tap here and ") "Type something.")
                    "Your browser does not seem to support WebGL. Please confirm setting or change browser."))
           (.on "click" (fn [] (.focus ($ "input"))))
           (.addClass "message")          
           (.insertAfter "header")
-          (.fadeIn 5000))
+          (.fadeIn 3000))
       (.addEventListener js/document
                          "keypress"
                          (fn remove-message[]
