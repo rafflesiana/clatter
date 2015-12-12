@@ -15,6 +15,7 @@
   (init [this])
   (animate [this]))
 
+
 (defrecord TextSprite [mesh pos rot force need-force]
   Sprite
   (init [this]
@@ -24,13 +25,14 @@
                        (fn [other linear-velocity angular-velocity]
                          (reset! need-force false)))
     (.set (.-position mesh) (.-x pos) (.-y pos) (.-z pos))
-    (.computeBoundingBox (.-geometry mesh))
-    (let [max (.-max (.-boundingBox (.-geometry mesh)))
-          min (.-min (.-boundingBox (.-geometry mesh)))
+    (let [geometry (doto (.-geometry mesh)
+                     (.computeBoundingBox))
+          max (.-max (.-boundingBox geometry))
+          min (.-min (.-boundingBox geometry))
           x (* -0.5 (- (.-x max) (.-x min)))
           y (* -0.5 (- (.-y max) (.-y min)))
           z (* -0.5 (- (.-z max) (.-z min)))]
-      (.applyMatrix (.-geometry mesh) (.makeTranslation (js/THREE.Matrix4. ) x y z)))
+      (.applyMatrix geometry (.makeTranslation (js/THREE.Matrix4. ) x y z)))
     (.set (.-rotation mesh) (.-x rot) (.-y rot) (.-z rot)))
   
   (animate [this]
@@ -48,15 +50,13 @@
   (clear-texts [this])
   (render [this]))
 
+
 (defrecord World [border-length scene camera light
                   renderer controls sprites]
   IWorld
   (spawn [this]
-    (.setGravity scene (js/THREE.Vector3. 0 0 0))
-    (.setClearColor renderer 16rffffff)
     (.set (.-position camera) 0 0 border-length)
-    (.add scene light)
-    (.add scene (js/THREE.AmbientLight. 16r444444))
+    (doseq [l [light (js/THREE.AmbientLight. 16r444444)]] (.add scene l))
     (put-boundary this)
     (update-projector this))
   
@@ -71,7 +71,9 @@
     ((fn render-frame []
        (.update controls)
        (let [pos (.-position camera)]
-         (.. (.-position light) (set (.-x pos) (.-y pos) (.-z pos)) normalize))
+         (-> (.-position light)
+             (.set (.-x pos) (.-y pos) (.-z pos))
+             (.normalize)))
        (doseq [sprite @sprites] (animate sprite))
        (.simulate scene)
        (.render renderer scene camera)
@@ -152,7 +154,6 @@
       (reset! sprites updated-sprites))))
 
 
-
 (defprotocol IApplication
   (start [this])
   (bind [this])
@@ -162,6 +163,7 @@
   (keypress [this evt])
   (message [this])
   (resize [this]))
+
 
 (defrecord Clatter [world audio-map mute]
   IApplication
@@ -173,26 +175,23 @@
 
   (bind [this]
     (let [button-holder ($ ".button-holder")
-          sound-button ($ "<button/>" (clj->js {:id "sound-button"
-                                                 :class "pure-button btn"}))
-          clear-button ($ "<button/>" (clj->js {:id "clear-button"
-                                                 :class "pure-button btn"}))]
+          sound-button (doto ($ "<button/>" (clj->js {:id "sound-button"
+                                                      :class "pure-button btn"}))
+                         (.append (.addClass ($ "<i/>") "fa fa-volume-up"))
+                         (.on "click" (fn [evt] (sound this evt))))
+          clear-button (doto ($ "<button/>" (clj->js {:id "clear-button"
+                                                      :class "pure-button btn"}))
+                         (.append (.addClass ($ "<i/>") "fa fa-undo"))
+                         (.on "click" (fn [evt] (clear this evt))))]
       (-> button-holder
           (.append sound-button)
           (.append clear-button))
-      (-> sound-button
-          (.append (.addClass ($ "<i/>") "fa fa-volume-up"))
-          (.on "click" (fn [evt] (sound this evt))))
-      (-> clear-button
-          (.append (.addClass ($ "<i/>") "fa fa-undo"))
-          (.on "click" (fn [evt] (clear this evt))))
       (when is-mobile
-        (let [keyboard-button ($ "<button/>" (clj->js {:id "keyboard-button"
-                                                        :class "pure-button btn"}))]
-          (.append button-holder keyboard-button)
-          (-> keyboard-button
-              (.append (.addClass ($ "<i/>") "fa fa-keyboard-o"))
-              (.on "click" (fn [] (.focus ($ "input"))))))))
+        (let [keyboard-button (doto ($ "<button/>" (clj->js {:id "keyboard-button"
+                                                             :class "pure-button btn"}))
+                                (.append (.addClass ($ "<i/>") "fa fa-keyboard-o"))
+                                (.on "click" (fn [] (.focus ($ "input")))))]
+          (.append button-holder keyboard-button))))
     (.keypress ($ js/document) (fn [evt] (keypress this evt)))
     (.resize ($ js/window) (fn [evt] (resize this)))
     (.appendChild js/document.body (.-domElement (:renderer world))))
@@ -254,14 +253,17 @@
   (resize [this]
     (update-projector world)))
 
+
 (.on ($ js/window)
      "load"
      (fn [] (let [width (.-innerWidth js/window)
                   height (.-innerHeight js/window)
                   camera (js/THREE.PerspectiveCamera. 45 (/ width height) 1 10000)
-                  renderer (js/THREE.WebGLRenderer. (clj->js {:antialias true}))
+                  renderer (doto (js/THREE.WebGLRenderer. (clj->js {:antialias true}))
+                             (.setClearColor 16rffffff))
                   world (World. (max width height)
-                                (js/Physijs.Scene.)
+                                (doto (js/Physijs.Scene.)
+                                  (.setGravity (js/THREE.Vector3. 0 0 0)))
                                 camera
                                 (js/THREE.DirectionalLight. 16rffffff)
                                 renderer
