@@ -1,5 +1,5 @@
 body{
-    font-family : "HelveticaNeue-Light", "HelveticaNeue", "Meiryo UI","Hiragino Kaku Gothic Pro";
+    font-family : "HelveticaNeue-UltraLight", "HelveticaNeue", "Meiryo UI","Hiragino Kaku Gothic Pro";
     color : #444444;
     margin : 0;
 }
@@ -52,6 +52,7 @@ h3{
 
 .message{
     font-size : 3em;
+    font-weight : 100;    
     position : absolute;
     display : none;
     top : 50%;
