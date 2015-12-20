@@ -51,11 +51,11 @@
   (render [this]))
 
 
-(defrecord World [border-length scene camera light
+(defrecord World [boundary-length scene camera light
                   renderer controls sprites]
   IWorld
   (spawn [this]
-    (.set (.-position camera) 0 0 border-length)
+    (.set (.-position camera) 0 0 boundary-length)
     (doseq [l [light (js/THREE.AmbientLight. 16r444444)]] (.add scene l))
     (put-boundary this)
     (update-projector this))
@@ -80,17 +80,17 @@
        (js/requestAnimationFrame render-frame))))
     
   (put-boundary [this]
-    (let [half-border (/ border-length 2)]
-      (doseq [[pos rot] [[[0 0 (- half-border)] [0 0 0]]
-                         [[0 0 half-border]     [0 0 0]]
-                         [[0 (- half-border) 0] [HALF-PI 0 0]]
-                         [[0 half-border 0]     [HALF-PI 0 0]]
-                         [[(- half-border) 0 0] [0 HALF-PI 0]]
-                         [[half-border 0 0]     [0 HALF-PI 0]]]]
+    (let [half-boundary (/ boundary-length 2)]
+      (doseq [[pos rot] [[[0 0 (- half-boundary)] [0 0 0]]
+                         [[0 0 half-boundary]     [0 0 0]]
+                         [[0 (- half-boundary) 0] [HALF-PI 0 0]]
+                         [[0 half-boundary 0]     [HALF-PI 0 0]]
+                         [[(- half-boundary) 0 0] [0 HALF-PI 0]]
+                         [[half-boundary 0 0]     [0 HALF-PI 0]]]]
         (put-plane this pos rot))))
   
   (put-plane [this pos rot]
-    (let [geometry (js/THREE.PlaneGeometry. border-length border-length 1 1)
+    (let [geometry (js/THREE.PlaneGeometry. boundary-length boundary-length 1 1)
           material (.createMaterial js/Physijs
                                     (js/THREE.MeshPhongMaterial. (clj->js {:wireframe false
                                                                            :transparent true
@@ -112,7 +112,7 @@
     (when (>= (count @sprites) 300)
       (delete-old-text this))
     
-    (let [size (/ border-length 5)
+    (let [size (/ boundary-length 5)
           geometry (js/THREE.TextGeometry. text
                                            (clj->js {:size size
                                                      :height 50
@@ -157,12 +157,11 @@
 (defprotocol IApplication
   (start [this])
   (bind [this])
-  (sound [this evt])
+  (change-mute [this evt])
   (play-sound [this text])
   (clear [this evt])
   (keypress [this evt])
-  (message [this])
-  (resize [this]))
+  (message [this]))
 
 
 (defrecord Clatter [world audio-map mute]
@@ -177,11 +176,11 @@
     (let [button-holder ($ ".button-holder")
           sound-button (doto ($ "<button/>" (clj->js {:id "sound-button"
                                                       :class "pure-button btn"}))
-                         (.append (.addClass ($ "<i/>") "fa fa-volume-up"))
-                         (.on "click" (fn [evt] (sound this evt))))
+                         (.append ($ "<i/>" (clj->js {:class "fa fa-volume-up"})))
+                         (.on "click" (fn [evt] (change-mute this evt))))
           clear-button (doto ($ "<button/>" (clj->js {:id "clear-button"
                                                       :class "pure-button btn"}))
-                         (.append (.addClass ($ "<i/>") "fa fa-undo"))
+                         (.append ($ "<i/>" (clj->js {:class "fa fa-undo"})))
                          (.on "click" (fn [evt] (clear this evt))))]
       (-> button-holder
           (.append sound-button)
@@ -189,28 +188,22 @@
       (when is-mobile
         (let [keyboard-button (doto ($ "<button/>" (clj->js {:id "keyboard-button"
                                                              :class "pure-button btn"}))
-                                (.append (.addClass ($ "<i/>") "fa fa-keyboard-o"))
+                                (.append ($ "<i/>" (clj->js {:class "fa fa-keyboard-o"})))
                                 (.on "click" (fn [] (.focus ($ "input")))))]
           (.append button-holder keyboard-button))))
     (.keypress ($ js/document) (fn [evt] (keypress this evt)))
-    (.resize ($ js/window) (fn [evt] (resize this)))
+    (.resize ($ js/window) (fn [evt] (update-projector world)))
     (.appendChild js/document.body (.-domElement (:renderer world))))
     
-  (sound [this evt]
+  (change-mute [this evt]
     (let [$sound-button ($ "#sound-button")
           $i ($ "#sound-button > i")
-          is-mute (.hasClass $sound-button "mute")
-          [remove add] (if is-mute
-                         (do
-                           (.removeClass $sound-button "mute")
-                           ["fa-volume-off" "fa-volume-up"])
-                         (do
-                           (.addClass $sound-button "mute")
-                           ["fa-volume-up" "fa-volume-off"]))]
+          classes ["fa-volume-off" "fa-volume-up"]
+          [remove add] (if @mute classes (rseq classes))]
       (-> $i
           (.removeClass remove)
           (.addClass add))
-      (reset! mute (not is-mute))))
+      (reset! mute (not @mute))))
   
   (play-sound [this text]
     (when-let [audio-tag (get audio-map text)]
@@ -233,13 +226,13 @@
           (put-text world char)))))
 
   (message [this]
-    (let [$message ($ "<div/>" "message")]
+    (let [$message ($ "<div/>" (clj->js {:id "message"
+                                         :class "message"}))]
       (-> $message
           (.text (if (.-webgl js/Detector)
                    (str (when is-mobile "Tap here and ") "Type something.")
                    "Your browser does not seem to support WebGL. Please confirm setting or change browser."))
           (.on "click" (fn [] (.focus ($ "input"))))
-          (.addClass "message")          
           (.insertAfter "header")
           (.fadeIn 3000))
       (.addEventListener js/document
@@ -248,10 +241,7 @@
                            (.remove $message)
                            (.removeEventListener js/document
                                                  "keypress"
-                                                 remove-message)))))
-  
-  (resize [this]
-    (update-projector world)))
+                                                 remove-message))))))
 
 
 (.on ($ js/window)
