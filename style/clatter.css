@@ -1,11 +1,13 @@
 body{
-    font-family : "HelveticaNeue-UltraLight", "HelveticaNeue", "Meiryo UI","Hiragino Kaku Gothic Pro";
+    font-family : "HelveticaNeue-UltraLight", "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
     color : #444444;
     margin : 0;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-stroke: 0.35px;
 }
 
 h1{
-    font-family : "Gill Sans", "HelveticaNeue-Light", "HelveticaNeue", "Meiryo UI","Hiragino Kaku Gothic Pro";
+    font-family : "Gill Sans", "HelveticaNeue-UltraLight", "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
     letter-spacing : 5px;
     font-weight : 400;
     margin-left : 20px;
@@ -32,7 +34,7 @@ a{
 
 h3{
     font-size : small;
-    font-weight : 400;
+    font-weight : 100;
     margin : 0 0 0 20px;
 }
 
