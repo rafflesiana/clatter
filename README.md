@@ -1,6 +1,6 @@
 # clatter
 
-A three.js application for kids powered by physics engine(Phyjijs), in ClojureScript.
+A three.js application for kids powered by physics engine(Physijs), in ClojureScript.
 
 [Try here.](http://rafflesiana.github.io/clatter)
 
